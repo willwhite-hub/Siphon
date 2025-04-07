@@ -1,0 +1,30 @@
+# Core
+fastapi
+uvicorn[standard]         # ASGI server with extras (watchgod, uvloop, httptools)
+
+# Database
+sqlalchemy                # ORM for DB operations
+asyncpg                   # PostgreSQL async driver
+
+# Scheduling
+apscheduler               # For periodic data fetching tasks
+
+# Web scraping (optional, if scraping prices)
+requests
+beautifulsoup4
+
+# CORS (for frontend-backend communication)
+starlette
+
+# Data validation / parsing
+pydantic
+
+# Environment variables management
+python-dotenv
+
+# Testing
+pytest
+httpx
+
+# (Optional) Logging / Monitoring
+loguru
