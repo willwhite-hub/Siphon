@@ -1,8 +1,11 @@
 import requests
-import csv
+import re
 from bs4 import BeautifulSoup
 from datetime import datetime
-from pathlib import Path
+
+from models import CottonPrice
+from db import SessionLocal, init_db
+from sqlalchemy.orm import Session
 
 
 def scrape_cotton_price():
@@ -30,7 +33,7 @@ def scrape_cotton_price():
     price = float(cells[0].text.strip())
     change = cells[1].text.strip()
     change = change.replace("(", "").replace(")", "")  # Remove parentheses
-    change = round(float(change), 2)  # Convert to float
+    change = float(change)  # Convert to float
 
     # Get the date following the specific span
     date_span = soup.find(
@@ -44,25 +47,53 @@ def scrape_cotton_price():
 
     # Optional: parse the date into a datetime object
     try:
-        pub_date = datetime.strptime(pub_date_raw, "%H:%M GMT %d%b, %Y")
+        pub_date = parse_date(pub_date_raw)
     except ValueError:
-        pub_date = pub_date_raw  # fallback to raw string if parsing fails
+        raise ValueError(
+            f"Could not parse date: {pub_date_raw}"
+        )  # fallback to raw string if parsing fails
 
     return {
         "commodity": "Cotton Price (Cotlook A Index)",
         "price": price,
-        "change": (change / price) * 100,
+        "change": change,
         "published_at": pub_date,
         "source": url,
     }
 
 
-# Append mode: write header only if file doesn't 
+def parse_date(raw_date):
+    # Remove 'st', 'nd', 'rd', 'th' from the day part
+    cleaned = re.sub(r"(\d+)(st|nd|rd|th)", r"\1", raw_date)
+    return datetime.strptime(cleaned, "%H:%M GMT %d %b, %Y")
+
+
+# Store data in database
+def store_price(data: dict, db: Session):
+    # Check for existing entry
+    existing = (
+        db.query(CottonPrice).filter_by(published_at=data["published_at"]).first()
+    )
+    if existing:
+        print("Entry for this date already exists.")
+        return
+
+    new_entry = CottonPrice(**data)
+    db.add(new_entry)
+    db.commit()
+    print("Stored price in database.")
+
 
 # Run test
 if __name__ == "__main__":
+    init_db()
+    db = SessionLocal()
+
     try:
         data = scrape_cotton_price()
+        store_price(data, db)
         print("Scraped data:", data)
     except Exception as e:
         print("Error:", e)
+    finally:
+        db.close()
