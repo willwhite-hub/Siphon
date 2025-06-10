@@ -7,7 +7,7 @@ from models import CottonPrice
 from db import SessionLocal, init_db
 from sqlalchemy.orm import Session
 
-
+# Scrape cotton price from Cotlook A Index
 def scrape_cotton_price():
     url = "https://www.cotlook.com"
 
