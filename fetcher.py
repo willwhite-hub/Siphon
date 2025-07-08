@@ -2,28 +2,39 @@ import requests
 import json
 from datetime import datetime
 from pathlib import Path
+from commodity_scraper import scrape_commodity
+from db import insert_price
 
 PRICE_FILE = Path("prices.json")
 
+def fetch_prices(commodity: str):
+    """    
+    Fetch the latest price for a given commodity and store it in the database.
+    Args:
+        commodity (str): The name of the commodity to fetch (e.g., "cotton", "wheat", "barley").
+    """
+    try:
+        data =  scrape_commodity(commodity)
+        
+        if not data:
+            raise ValueError(f"No data found for commodity: {commodity}")
+            return
 
-def fetch_cotton_price():
-    # Simulated price API response
-    # Replace with read API or scrape source
-    price_data = {
-        "commodity": "Cotton",
-        "price": "450.69",  # AUD/bale
-        "currency": "AUD",
-        "unit": "dollars/bale",
-        "source": "source.net",  # example
-        "timestamp": datetime.now().isoformat(),
-    }
+        # Add timestamp to the data
+        data["timestamp"] = datetime.now().isoformat()
 
-    # Save to file (could be DB in future)
-    with open(PRICE_FILE, "w") as f:
-        json.dump(price_data, f, indent=4)
+        insert_price(
+            commodity=data["commodity"],
+            price=data["price"],
+            change=data["change"],
+            currency=data["currency"],
+            unit=data["unit"],
+            source=data["source"],
+            timestamp=data["timestamp"]
+        )
 
-    print("Fetched and saved latest cotton price.")
+        print(f"Successfully fetched and stored price for {data['commodity']}.")
 
+    except Exception as e:
+        print(f"Error fetching price for {commodity}: {e}")
 
-if __name__ == "__main__":
-    fetch_cotton_price()

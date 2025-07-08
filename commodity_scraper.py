@@ -7,8 +7,27 @@ from models import CottonPrice
 from db import SessionLocal, init_db
 from sqlalchemy.orm import Session
 
+def scrape_commodity(commodity: str):
+    """
+    Scrape the price of a commodity from its respective source.
+    Args:
+        commodity (str): The name of the commodity to scrape (e.g., "cotton", "wheat", "barley").
+    Returns:
+        dict: A dictionary containing the scraped price data.
+    Raises:
+        ValueError: If the commodity is not supported.
+    """
+    if commodity.lower() == "cotton":
+        return scrape_cotton()
+    elif commodity.lower() == "wheat":
+        return scrape_wheat()
+    elif commodity.lower() == "barley":
+        return scrape_barley()
+    else:
+        raise ValueError(f"Unsupported commodity: {commodity}")
+
 # Scrape cotton price from Cotlook A Index
-def scrape_cotton_price():
+def scrape_cotton():
     url = "https://www.cotlook.com"
 
     headers = {
@@ -57,10 +76,30 @@ def scrape_cotton_price():
         "commodity": "Cotton Price (Cotlook A Index)",
         "price": price,
         "change": change,
-        "published_at": pub_date,
+        "unit": "$/bale",
         "source": url,
+        "unit": "$/bale",
     }
 
+def scrape_wheat():
+    # TODO: Implement wheat scraping logic
+    return {
+        "commodity": "Wheat Price",
+        "price": 0.0,
+        "change": 0.0,
+        "source": "https://example.com/wheat",
+        "unit": "$/tonne",
+    }
+
+def scrape_barley():
+    # TODO: Implement barley scraping logic
+    return {
+        "commodity": "Barley Price",
+        "price": 0.0,
+        "change": 0.0,
+        "source": "https://example.com/barley",
+        "unit": "$/tonne",
+    }
 
 def parse_date(raw_date):
     # Remove 'st', 'nd', 'rd', 'th' from the day part
@@ -90,7 +129,7 @@ if __name__ == "__main__":
     db = SessionLocal()
 
     try:
-        data = scrape_cotton_price()
+        data = scrape_commodity()
         store_price(data, db)
         print("Scraped data:", data)
     except Exception as e:
