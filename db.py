@@ -5,10 +5,11 @@ from datetime import datetime
 
 DB_FILE = "sqlite:///./data/prices.db"
 engine =  create_engine(DB_FILE, connect_args={"check_same_thread": False})
-Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Create tables if they don't exist
-Base.metadata.create_all(engine)
+def init_db():
+    Base.metadata.create_all(engine)
 
 def insert_price(commodity, price, currency, change, unit, source, timestamp):
     """
@@ -22,7 +23,7 @@ def insert_price(commodity, price, currency, change, unit, source, timestamp):
         source (str): The source URL for the price data.
         timestamp (datetime or str): The timestamp of the price data.
     """
-    session = Session()
+    session = SessionLocal()
     try: 
         if isinstance(timestamp, str):
             timestamp = datetime.fromisoformat(timestamp)

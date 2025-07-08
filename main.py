@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 import json
 
-from fetcher import fetch_and_store_price
+from fetcher import fetch_prices
 from commodity_scraper import scrape_commodity
 from datetime import datetime
 
@@ -16,7 +16,7 @@ async def lifespan(app: FastAPI):
     all_prices = []
     for commodity in SUPPORTED_COMMODITIES:
         try:
-            fetch_and_store_price(commodity)
+            fetch_prices(commodity)
             data = scrape_commodity(commodity)
             data["timestamp"] = datetime.utcnow().isoformat()
             all_prices.append(data)

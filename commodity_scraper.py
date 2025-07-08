@@ -3,9 +3,10 @@ import re
 from bs4 import BeautifulSoup
 from datetime import datetime
 
-from models import CottonPrice
+from models import Price
 from db import SessionLocal, init_db
 from sqlalchemy.orm import Session
+
 
 def scrape_commodity(commodity: str):
     """
@@ -25,6 +26,7 @@ def scrape_commodity(commodity: str):
         return scrape_barley()
     else:
         raise ValueError(f"Unsupported commodity: {commodity}")
+
 
 # Scrape cotton price from Cotlook A Index
 def scrape_cotton():
@@ -81,6 +83,7 @@ def scrape_cotton():
         "unit": "$/bale",
     }
 
+
 def scrape_wheat():
     # TODO: Implement wheat scraping logic
     return {
@@ -90,6 +93,7 @@ def scrape_wheat():
         "source": "https://example.com/wheat",
         "unit": "$/tonne",
     }
+
 
 def scrape_barley():
     # TODO: Implement barley scraping logic
@@ -101,6 +105,7 @@ def scrape_barley():
         "unit": "$/tonne",
     }
 
+
 def parse_date(raw_date):
     # Remove 'st', 'nd', 'rd', 'th' from the day part
     cleaned = re.sub(r"(\d+)(st|nd|rd|th)", r"\1", raw_date)
@@ -110,14 +115,12 @@ def parse_date(raw_date):
 # Store data in database
 def store_price(data: dict, db: Session):
     # Check for existing entry
-    existing = (
-        db.query(CottonPrice).filter_by(published_at=data["published_at"]).first()
-    )
+    existing = db.query(Price).filter_by(published_at=data["published_at"]).first()
     if existing:
         print("Entry for this date already exists.")
         return
 
-    new_entry = CottonPrice(**data)
+    new_entry = Price(**data)
     db.add(new_entry)
     db.commit()
     print("Stored price in database.")
