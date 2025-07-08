@@ -77,10 +77,11 @@ def scrape_cotton():
     return {
         "commodity": "Cotton Price (Cotlook A Index)",
         "price": price,
+        "currency": "AUD",
         "change": change,
         "unit": "$/bale",
         "source": url,
-        "unit": "$/bale",
+        "timestamp": pub_date,
     }
 
 
@@ -89,9 +90,11 @@ def scrape_wheat():
     return {
         "commodity": "Wheat Price",
         "price": 0.0,
+        "currency": "AUD",
         "change": 0.0,
-        "source": "https://example.com/wheat",
         "unit": "$/tonne",
+        "source": "https://example.com/wheat",
+        "timestamp": "pub_date",
     }
 
 
@@ -100,9 +103,11 @@ def scrape_barley():
     return {
         "commodity": "Barley Price",
         "price": 0.0,
+        "currency": "AUD",
         "change": 0.0,
-        "source": "https://example.com/barley",
         "unit": "$/tonne",
+        "source": "https://example.com/barley",
+        "timestamp": "pub_date",
     }
 
 
