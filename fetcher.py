@@ -1,9 +1,9 @@
-import requests
-import json
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from commodity_scraper import scrape_commodity
 from db import insert_price
+
 
 PRICE_FILE = Path("prices.json")
 
@@ -21,7 +21,7 @@ def fetch_prices(commodity: str):
             return
 
         # Add timestamp to the data
-        data["timestamp"] = datetime.now().isoformat()
+        data["timestamp"] = datetime.now(ZoneInfo("Australia/Brisbane")).isoformat()
 
         insert_price(
             commodity=data["commodity"],
