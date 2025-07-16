@@ -2,7 +2,7 @@ import requests
 import re
 from bs4 import BeautifulSoup
 from datetime import datetime
-
+from currency import get_usd_to_aud
 from models import Price
 from db import SessionLocal, init_db
 from sqlalchemy.orm import Session
@@ -54,36 +54,42 @@ def scrape_cotton():
         raise ValueError("Not enough cells in A Index row")
 
     price = float(cells[0].text.strip())
+    # Convert price to AUD$/bale
+    exchange_rate = get_usd_to_aud()
+    if exchange_rate is None:
+        raise ValueError("Could not fetch exchange rate for USD to AUD")
+    price_aud = round(((price * exchange_rate) / 100) * 500, 2)  # Convert from USc to AUD
+
     change = cells[1].text.strip()
     change = change.replace("(", "").replace(")", "")  # Remove parentheses
     change = float(change)  # Convert to float
-
+    date = datetime.now() # Use current date as publication date
     # Get the date following the specific span
-    date_span = soup.find(
-        "span", class_="show-for-sr", string=". Date of index value: "
-    )
-    if not date_span:
-        raise ValueError("Date span not found")
+    # date_span = soup.find(
+    #     "span", class_="show-for-sr", string=". Date of index value: "
+    # )
+    # if not date_span:
+    #     raise ValueError("Date span not found")
 
-    # The actual date is in the next sibling text node
-    pub_date_raw = date_span.next_sibling.strip()
+    # # The actual date is in the next sibling text node
+    # pub_date_raw = date_span.next_sibling.strip()
 
-    # Optional: parse the date into a datetime object
-    try:
-        pub_date = parse_date(pub_date_raw)
-    except ValueError:
-        raise ValueError(
-            f"Could not parse date: {pub_date_raw}"
-        )  # fallback to raw string if parsing fails
+    # # Optional: parse the date into a datetime object
+    # try:
+    #     pub_date = parse_date(pub_date_raw)
+    # except ValueError:
+    #     raise ValueError(
+    #         f"Could not parse date: {pub_date_raw}"
+    #     )  # fallback to raw string if parsing fails
 
     return {
         "commodity": "Cotton Price (Cotlook A Index)",
-        "price": price,
+        "price": price_aud,
         "currency": "AUD",
         "change": change,
         "unit": "$/bale",
         "source": url,
-        "timestamp": pub_date,
+        "timestamp": date,
     }
 
 def scrape_wheat():
@@ -127,11 +133,18 @@ def scrape_beef():
     row = soup.find("td", style="text-align:right;", string="Beef – Eastern Young Cattle Indicator")
 
     # Extract the next sibling cells
-    date = row.find_next_sibling("td").text
+    # date = row.find_next_sibling("td").text
     unit = row.find_next_sibling("td").find_next_sibling("td").text
     price = row.find_next_sibling("td").find_next_sibling("td").find_next_sibling("td").text
-    change = row.find_next_sibling("td").find_next_sibling("td").find_next_sibling("td").find_next_sibling("td").text
-
+    previous_price = row.find_next_sibling("td").find_next_sibling("td").find_next_sibling("td").find_next_sibling("td").text
+    # Convert previous price to change
+    change  = float(price) - float(previous_price)
+    
+    # Get the date accessed
+    date = datetime.now()  # Use current date as publication date
+    # Clean up the date
+    # current_year = datetime.now().year
+    # date_cleaned = datetime.strptime(f"{date}-{current_year}", "%d %b %Y")
 
     return {
         "commodity": "Beef Price",
@@ -167,7 +180,7 @@ if __name__ == "__main__":
     db = SessionLocal()
 
     try:
-        data = scrape_commodity("cotton") # Remove this when not testing
+        data = scrape_commodity("beef") # Remove this when not testing
         store_price(data, db)
         print("Scraped data:", data)
     except Exception as e:
