@@ -12,7 +12,7 @@ def scrape_commodity(commodity: str):
     """
     Scrape the price of a commodity from its respective source.
     Args:
-        commodity (str): The name of the commodity to scrape (e.g., "cotton", "wheat", "barley").
+        commodity (str): The name of the commodity to scrape (e.g., "cotton", "wheat", "barley", "beef").
     Returns:
         dict: A dictionary containing the scraped price data.
     Raises:
@@ -24,6 +24,8 @@ def scrape_commodity(commodity: str):
         return scrape_wheat()
     elif commodity.lower() == "barley":
         return scrape_barley()
+    elif commodity.lower() == "beef":
+        return scrape_beef()
     else:
         raise ValueError(f"Unsupported commodity: {commodity}")
 
@@ -84,7 +86,6 @@ def scrape_cotton():
         "timestamp": pub_date,
     }
 
-
 def scrape_wheat():
     # TODO: Implement wheat scraping logic
     return {
@@ -96,7 +97,6 @@ def scrape_wheat():
         "source": "https://example.com/wheat",
         "timestamp": "pub_date",
     }
-
 
 def scrape_barley():
     # TODO: Implement barley scraping logic
@@ -110,17 +110,48 @@ def scrape_barley():
         "timestamp": "pub_date",
     }
 
+def scrape_beef():
+    # url for beef prices
+    url = "https://www.agriculture.gov.au/abares/data/weekly-commodity-price-update"
+    
+    headers = {
+        "User-Agent": "Mozilla/5.0 (compatible; BeefScraper/1.0)",
+        "Accept": "text/html,application/xhtml+xml",
+    }
+
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()  # Raise error if request fails
+
+    soup = BeautifulSoup(response.text, "html.parser")
+
+    row = soup.find("td", style="text-align:right;", string="Beef – Eastern Young Cattle Indicator")
+
+    # Extract the next sibling cells
+    date = row.find_next_sibling("td").text
+    unit = row.find_next_sibling("td").find_next_sibling("td").text
+    price = row.find_next_sibling("td").find_next_sibling("td").find_next_sibling("td").text
+    change = row.find_next_sibling("td").find_next_sibling("td").find_next_sibling("td").find_next_sibling("td").text
+
+
+    return {
+        "commodity": "Beef Price",
+        "price": price,
+        "currency": "AUD",
+        "change": change,
+        "unit": unit,
+        "source": url,
+        "timestamp": date,
+    }
 
 def parse_date(raw_date):
     # Remove 'st', 'nd', 'rd', 'th' from the day part
     cleaned = re.sub(r"(\d+)(st|nd|rd|th)", r"\1", raw_date)
     return datetime.strptime(cleaned, "%H:%M GMT %d %b, %Y")
 
-
 # Store data in database
 def store_price(data: dict, db: Session):
     # Check for existing entry
-    existing = db.query(Price).filter_by(published_at=data["published_at"]).first()
+    existing = db.query(Price).filter_by(timestamp=data["timestamp"]).first()
     if existing:
         print("Entry for this date already exists.")
         return
@@ -130,14 +161,13 @@ def store_price(data: dict, db: Session):
     db.commit()
     print("Stored price in database.")
 
-
 # Run test
 if __name__ == "__main__":
     init_db()
     db = SessionLocal()
 
     try:
-        data = scrape_commodity()
+        data = scrape_commodity("cotton") # Remove this when not testing
         store_price(data, db)
         print("Scraped data:", data)
     except Exception as e:

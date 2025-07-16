@@ -21,6 +21,7 @@ class Price(Base):
     id = Column(Integer, primary_key=True, index=True)
     commodity = Column(String)
     price = Column(Float)
+    currency = Column(String, default="AUD")  # Default currency is AUD
     change = Column(Float)
     unit = Column(String)
     timestamp = Column(DateTime)
