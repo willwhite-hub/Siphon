@@ -7,13 +7,36 @@ from fetcher import fetch_prices
 from commodity_scraper import scrape_commodity
 from datetime import datetime
 from zoneinfo import ZoneInfo
+from sqlalchemy.orm import Session
+from fastapi import Depends
+from db import SessionLocal
+from models import Price
 
 PRICE_FILE = Path("prices.json")
-SUPPORTED_COMMODITIES = ["cotton", "wheat", "barley"]
+SUPPORTED_COMMODITIES = ["cotton", "wheat", "barley", "beef"]
+
+def get_db():
+    """
+    Dependency to get a database session.
+    Yields:
+        Session: A SQLAlchemy session.
+    """
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup logic
+    """
+    Lifespan context manager to initialize the app and fetch initial prices.
+    This runs once when the app starts up.
+    Args:   
+        app (FastAPI): The FastAPI application instance.        
+        Yields:
+            None: The app is running.
+    """
     all_prices = []
     for commodity in SUPPORTED_COMMODITIES:
         # Fetch prices from the API and scrape data
@@ -31,7 +54,6 @@ async def lifespan(app: FastAPI):
 
     yield  # app runs here
 
-    # (Optional) shutdown logic here
 # Create the FastAPI app with the lifespan context manager
 app = FastAPI(lifespan=lifespan)
 
@@ -48,3 +70,33 @@ def get_prices():
     # Read prices from the JSON file
     with open(PRICE_FILE, "r") as f:
         return json.load(f)
+
+# Add route for historical data
+@app.get("/history/{commodity}")
+def get_historical_prices(commodity: str, db: Session = Depends(get_db)):
+    """
+    Get historical prices for a specific commodity.
+    Args:
+        commodity (str): The commodity to fetch historical prices for.
+       db (Session): The database session.
+    Returns:
+        List[Price]: A list of historical prices for the commodity.
+    """
+    results = db.query(Price)\
+        .filter(Price.commodity.ilike(f"%{commodity}%"))\
+        .order_by(Price.timestamp.desc())\
+        .all()
+    
+    # Convert SQLAlchemy results to dictionaries
+    return [
+        {
+            "commodity": r.commodity,
+            "price": r.price,
+            "currency": r.currency,
+            "change": r.change,
+            "unit": r.unit,
+            "source": r.source,
+            "timestamp": r.timestamp.isoformat(),
+            
+        } for r in results
+    ]
