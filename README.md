@@ -1,21 +1,28 @@
 # Siphon
 
-An all-in-one agricultural tracker for commodities, weather, roads and water levels. Currently focused on cotton price tracking with plans to expand to other agricultural data.
+An all-in-one agricultural tracker for commodities, weather, roads, and water levels.  
+Currently supports live price tracking for **cotton**, **wheat**, **barley**, and **beef**, with historical data logging and a web UI.
+
+---
 
 ## Features
 
-- **Cotton Price Tracking**: Automatically scrapes cotton prices from Cotlook A Index
-- **REST API**: FastAPI-based API for accessing price data
-- **Scheduled Updates**: Automated weekly price updates via cron job
-- **Database GUI**: Web-based SQLite database viewer
-- **Docker Support**: Fully containerized with Docker Compose
+- **Multi-Commodity Support**: Tracks Cotton, Wheat, Barley, and Beef prices
+- **Historical Price Logging**: Automatically stores all prices in a SQLite database
+- **Live REST API**: Built with FastAPI to serve both current and historical price data
+- **Web UI (React)**: Frontend app to display prices in a table (charts coming soon)
+- **Auto Fetch on Startup**: Scrapes latest prices when the backend launches
+- **Docker Support**: Fully containerized with Docker Compose for easy deployment
+
+---
 
 ## Quick Start
 
 ### Prerequisites
 
-- Docker and Docker Compose installed on your system
-- Git (to clone the repository)
+- Docker + Docker Compose
+- Git
+- Node.js + npm (for frontend development)
 
 ### Installation & Setup
 
@@ -25,47 +32,37 @@ An all-in-one agricultural tracker for commodities, weather, roads and water lev
    cd siphon
    ```
 
-2. **Create data directory** (if it doesn't exist)
+2. **Create data directory**
    ```bash
    mkdir -p data
    ```
 
-3. **Start the application**
+3. **Start the app**
    ```bash
    docker compose up --build
    ```
 
-4. **Verify services are running**
-   ```bash
-   docker compose ps
-   ```
+4. **Visit your services**
+   | Service         | URL                      | Description                      |
+   |-----------------|--------------------------|----------------------------------|
+   | API             | http://localhost:8000    | FastAPI application              |
+   | API Docs        | http://localhost:8000/docs | Swagger-style interactive docs |
+   | Database Viewer | http://localhost:8080    | SQLite web interface             |
+   | Frontend (dev)  | http://localhost:3000    | React app (run separately)       |
 
-### Services & Access Points
-
-After running `docker-compose up -d`, the following services will be available:
-
-| Service | URL | Description |
-|---------|-----|-------------|
-| **API** | http://localhost:8000 | Main FastAPI application |
-| **API Docs** | http://localhost:8000/docs | Interactive API documentation |
-| **Database GUI** | http://localhost:8080 | SQLite database web interface |
+---
 
 ## API Usage
 
-### Get Latest Cotton Prices
+### Get Current Prices
 ```bash
 curl http://localhost:8000/prices
 ```
 
-**Example Response:**
-```json
-{
-  "commodity": "Cotton Price (Cotlook A Index)",
-  "price": 73.50,
-  "change": -0.25,
-  "published_at": "2025-06-10T13:00:00",
-  "source": "https://www.cotlook.com"
-}
+### Get Historical Prices for a Commodity
+```bash
+curl http://localhost:8000/history/cotton
+curl http://localhost:8000/history/wheat
 ```
 
 ### Health Check
@@ -73,96 +70,72 @@ curl http://localhost:8000/prices
 curl http://localhost:8000/
 ```
 
-## Manual Price Update
+---
 
-To manually trigger a price scrape (useful for testing):
+## React Frontend
+
+### Run the UI
+1. Open a new terminal:
+   ```bash
+   cd frontend
+   npm install
+   npm start
+   ```
+
+2. Open: [http://localhost:3000](http://localhost:3000)
+
+The React app fetches from `/prices` and displays them in a table. CORS is enabled in FastAPI to allow cross-origin requests from localhost:3000.
+
+---
+
+## Development (Without Docker)
 
 ```bash
-docker exec cotton-scraper python cotton_scraper.py
+# Install dependencies
+pip install -r requirements.txt
+
+# Initialize DB
+python -c "from db import init_db; init_db()"
+
+# Run FastAPI app
+uvicorn main:app --reload
 ```
+
+---
 
 ## Project Structure
 
 ```
 siphon/
-├── main.py              # FastAPI application
-├── cotton_scraper.py    # Cotlook price scraper
-├── models.py           # SQLAlchemy database models
-├── db.py               # Database configuration
-├── fetcher.py          # Alternative price fetcher (backup)
-├── docker-compose.yml  # Docker services configuration
-├── Dockerfile          # Container build instructions
-├── requirements.txt    # Python dependencies
-└── data/              # SQLite database storage
-    └── prices.db      # Price history database
+├── main.py               # FastAPI app
+├── commodity_scraper.py  # Commodity-specific scrapers
+├── fetcher.py            # Fetch+insert wrapper
+├── models.py             # SQLAlchemy models
+├── db.py                 # DB setup and insert logic
+├── frontend/             # React frontend
+├── docker-compose.yml    # Service orchestration
+├── Dockerfile            # Backend Docker image
+└── data/prices.db        # SQLite DB with price history
 ```
 
-## Configuration
-
-### Scraping Schedule
-
-The scraper runs automatically every Tuesday at 01:00 (to account for Cotlook's Monday 13:00 GMT updates). To modify the schedule, edit the cron expression in `docker-compose.yml`:
-
-```yaml
-# Current: Every Tuesday at 01:00
-command: "echo '0 1 * * 2 cd /app && python cotton_scraper.py >> /app/scraper.log 2>&1' > /etc/crontabs/root && crond -f -l 2"
-```
-
-### Environment Variables
-
-Create a `.env` file for custom configuration:
-
-```env
-DATABASE_URL=sqlite:///./data/prices.db
-API_PORT=8000
-DB_GUI_PORT=8080
-```
-
-## Development
-
-### Running Locally (without Docker)
-
-1. **Install Python dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-2. **Initialize database**
-   ```bash
-   python -c "from db import init_db; init_db()"
-   ```
-
-3. **Run the API server**
-   ```bash
-   uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-   ```
-
-4. **Test the scraper**
-   ```bash
-   python cotton_scraper.py
-   ```
-
-### Adding New Data Sources
-
-To extend Siphon with additional agricultural data:
-
-1. Create a new scraper module (e.g., `weather_scraper.py`)
-2. Add corresponding database models in `models.py`
-3. Create new API endpoints in `main.py`
-4. Update the Docker Compose configuration for scheduling
-
+---
 
 ## Data Sources
 
-- **Cotton Prices**: [Cotlook A Index](https://www.cotlook.com) - Industry standard cotton price benchmark
+- **Cotton**: [Cotlook A Index](https://www.cotlook.com)
+- **Wheat/Barley**: [NSW DPI](https://www.dpi.nsw.gov.au/agriculture/commodity-report)
+- **Beef**: [ABARES](https://www.agriculture.gov.au/abares/data/weekly-commodity-price-update)
+
+---
 
 ## Roadmap
 
-- [ ] Weather data integration
-- [ ] Road condition monitoring
-- [ ] Water level tracking
-- [ ] Historical data visualization
-- [ ] Price alerts and notifications
-- [ ] Mobile app support
+- [x] Multi-commodity scraper
+- [x] Store historical prices in SQLite
+- [x] React UI for live prices
+- [ ] Historical price charts
+- [ ] Weather & water level data
+- [ ] SMS/Email price alerts
+- [ ] Mobile app version
 
 ---
