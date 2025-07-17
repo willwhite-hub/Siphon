@@ -63,6 +63,10 @@ def scrape_cotton():
     change = cells[1].text.strip()
     change = change.replace("(", "").replace(")", "")  # Remove parentheses
     change = float(change)  # Convert to float
+    # Convert change to percentage
+    previous_price = price + change
+    percentage_change = round((change / previous_price) * 100, 2) if previous_price != 0 else 0.0
+
     date = datetime.now() # Use current date as publication date
     # Get the date following the specific span
     # date_span = soup.find(
@@ -86,7 +90,7 @@ def scrape_cotton():
         "commodity": "Cotton (Cotlook A Index)",
         "price": price_aud,
         "currency": "AUD",
-        "change": change,
+        "change": percentage_change,
         "unit": "$/bale",
         "source": url,
         "timestamp": date,
@@ -217,11 +221,12 @@ def scrape_beef():
 
     # Extract the next sibling cells
     # date = row.find_next_sibling("td").text
-    unit = row.find_next_sibling("td").find_next_sibling("td").text
+    unit = "c/kg"
     price = row.find_next_sibling("td").find_next_sibling("td").find_next_sibling("td").text
     previous_price = row.find_next_sibling("td").find_next_sibling("td").find_next_sibling("td").find_next_sibling("td").text
     # Convert previous price to change
     change  = float(price) - float(previous_price)
+    percentage_change = round((change / float(previous_price)) * 100, 2) if float(previous_price) != 0 else 0.0
     
     # Get the date accessed
     date = datetime.now()  # Use current date as publication date
@@ -230,10 +235,10 @@ def scrape_beef():
     # date_cleaned = datetime.strptime(f"{date}-{current_year}", "%d %b %Y")
 
     return {
-        "commodity": "Beef Price",
+        "commodity": "Beef (Eastern Young Cattle Indicator)",
         "price": price,
         "currency": "AUD",
-        "change": change,
+        "change": percentage_change,
         "unit": unit,
         "source": url,
         "timestamp": date,

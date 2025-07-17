@@ -1,19 +1,20 @@
-from fastapi import FastAPI
+import json
 from contextlib import asynccontextmanager
 from pathlib import Path
-import json
-
 from fetcher import fetch_prices
 from commodity_scraper import scrape_commodity
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from sqlalchemy.orm import Session
-from fastapi import Depends
 from db import SessionLocal
 from models import Price
+from fastapi import Depends
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 PRICE_FILE = Path("prices.json")
 SUPPORTED_COMMODITIES = ["cotton", "wheat", "barley", "beef"]
+
 
 def get_db():
     """
@@ -54,8 +55,15 @@ async def lifespan(app: FastAPI):
 
     yield  # app runs here
 
-# Create the FastAPI app with the lifespan context manager
+# Enable CORS
 app = FastAPI(lifespan=lifespan)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 # Root endpoint

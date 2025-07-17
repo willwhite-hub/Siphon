@@ -1,8 +1,38 @@
-{
-    "commodity": "Cotton",
-    "price": "450.69",
-    "currency": "AUD",
-    "unit": "dollars/bale",
-    "source": "source.net",
-    "timestamp": "2025-04-07T15:36:55.176545"
-}
+[
+    {
+        "commodity": "Cotton (Cotlook A Index)",
+        "price": 602.44,
+        "currency": "AUD",
+        "change": 0.88,
+        "unit": "$/bale",
+        "source": "https://www.cotlook.com",
+        "timestamp": "2025-07-17T18:00:13.696653+10:00"
+    },
+    {
+        "commodity": "Wheat (H2)",
+        "price": 345.0,
+        "currency": "AUD",
+        "change": 0.0,
+        "unit": "$/tonne",
+        "source": "https://www.dpi.nsw.gov.au/agriculture/commodity-report",
+        "timestamp": "2025-07-17T18:00:14.145085+10:00"
+    },
+    {
+        "commodity": "Barley (feed)",
+        "price": 300.0,
+        "currency": "AUD",
+        "change": -2.9,
+        "unit": "$/tonne",
+        "source": "https://www.dpi.nsw.gov.au/agriculture/commodity-report",
+        "timestamp": "2025-07-17T18:00:14.554043+10:00"
+    },
+    {
+        "commodity": "Beef (Eastern Young Cattle Indicator)",
+        "price": "727",
+        "currency": "AUD",
+        "change": 1.11,
+        "unit": "c/kg",
+        "source": "https://www.agriculture.gov.au/abares/data/weekly-commodity-price-update",
+        "timestamp": "2025-07-17T18:00:14.785233+10:00"
+    }
+]
