@@ -83,7 +83,7 @@ def scrape_cotton():
     #     )  # fallback to raw string if parsing fails
 
     return {
-        "commodity": "Cotton Price (Cotlook A Index)",
+        "commodity": "Cotton (Cotlook A Index)",
         "price": price_aud,
         "currency": "AUD",
         "change": change,
@@ -93,27 +93,110 @@ def scrape_cotton():
     }
 
 def scrape_wheat():
-    # TODO: Implement wheat scraping logic
+    url = "https://www.dpi.nsw.gov.au/agriculture/commodity-report"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (compatible; WheatScraper/1.0)",
+        "Accept": "text/html,application/xhtml+xml",
+    }
+    
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()  # Raise error if request fails
+    
+    soup = BeautifulSoup(response.text, "html.parser")
+    
+    # Find the wheat section
+    wheat_section = soup.find("h2", string="Wheat")
+    if not wheat_section:
+        raise ValueError("Wheat section not found") 
+    
+    # Go to parent element
+    row = wheat_section.find_parent("div", class_="row")
+    if not row:
+        raise ValueError("Container for wheat price not found")
+    container = row.find("div", class_="col-md-8")
+    if not container:
+        raise ValueError("Container for wheat price not found")
+    
+    # Extract price
+    price_text = container.find("h2").text.strip()
+    if not price_text:
+        raise ValueError("Price text not found in wheat section")
+    price_match = re.search(r"\$(\d+(?:\d+)?)", price_text)
+    if not price_match:
+        raise ValueError("Price not found in wheat section")
+    price = float(price_match.group(1))
+
+    # Extract change
+    change_tag = container.find("strong")
+    change_text = change_tag.text.strip() if change_tag else ""
+    if "steady" in change_text.lower():
+        change = 0.0
+    else:
+        change_match = re.search(r"([+-]?\d+(?:\.\d+)?)%", change_text)
+        change = float(change_match.group(1)) if change_match else None
+    
     return {
-        "commodity": "Wheat Price",
-        "price": 0.0,
+        "commodity": "Wheat (H2)",
+        "price": price,
         "currency": "AUD",
-        "change": 0.0,
+        "change": change,
         "unit": "$/tonne",
-        "source": "https://example.com/wheat",
-        "timestamp": "pub_date",
+        "source": url,
+        "timestamp": datetime.now(),  # Use current date as publication date
     }
 
 def scrape_barley():
-    # TODO: Implement barley scraping logic
+    url = "https://www.dpi.nsw.gov.au/agriculture/commodity-report"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (compatible; BarleyScraper/1.0)",
+        "Accept": "text/html,application/xhtml+xml",
+    }
+    
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()  # Raise error if request fails
+    
+    soup = BeautifulSoup(response.text, "html.parser")
+    
+    # Find the wheat section
+    barley_section = soup.find("h2", string="Barley")
+    if not barley_section:
+        raise ValueError("Barley section not found") 
+    
+    # Go to parent element
+    row = barley_section.find_parent("div", class_="row")
+    if not row:
+        raise ValueError("Container for barley price not found")
+    container = row.find("div", class_="col-md-8")
+    if not container:
+        raise ValueError("Container for barley price not found")
+    
+    # Extract price
+    price_text = container.find("h2").text.strip()
+    if not price_text:
+        raise ValueError("Price text not found in barley section")
+    price_match = re.search(r"\$(\d+(?:\.\d+)?)", price_text)
+    if not price_match:
+        raise ValueError("Price not found in barley section")
+    price = float(price_match.group(1))
+
+    # Extract change
+    change_tag = container.find("strong")
+    change_text = change_tag.text.strip() if change_tag else ""
+
+    if "steady" in change_text.lower():
+        change = 0.0
+    else:
+        change_match = re.search(r"([+-]?\d+(?:\.\d+)?)%", change_text)
+        change = float(change_match.group(1)) if change_match else None
+
     return {
-        "commodity": "Barley Price",
-        "price": 0.0,
+        "commodity": "Barley (feed)",
+        "price": price,
         "currency": "AUD",
-        "change": 0.0,
+        "change": change,
         "unit": "$/tonne",
-        "source": "https://example.com/barley",
-        "timestamp": "pub_date",
+        "source": url,
+        "timestamp": datetime.now(), 
     }
 
 def scrape_beef():
@@ -180,7 +263,7 @@ if __name__ == "__main__":
     db = SessionLocal()
 
     try:
-        data = scrape_commodity("beef") # Remove this when not testing
+        data = scrape_commodity("wheat") # Remove this when not testing
         store_price(data, db)
         print("Scraped data:", data)
     except Exception as e:
