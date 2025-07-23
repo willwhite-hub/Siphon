@@ -24,6 +24,7 @@ jobs:
         ssh -tt ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
           cd ${{ secrets.PROJECT_DIR }}
           git pull origin main
-          docker-compose down
-          docker-compose up --build -d
+          docker-compose down --remove-orphans
+          docker-compose build --no-cache
+          docker-compose up -d
         EOF

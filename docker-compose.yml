@@ -1,37 +1,46 @@
+version: '3.9'
+
 services:
   web:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
     container_name: cotton-api
     ports:
       - "8000:8000"
     volumes:
-      - db_data:/app/data  
+      - db_data:/app/data
+    working_dir: /app
     command: >
       uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
   scraper:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
-    container_name: cotton-scraper
+    container_name: siphon-scraper
     volumes:
       - db_data:/app/data
+    working_dir: /app
     entrypoint: ["/bin/sh", "-c"]
-    # Cotlook updates every Monday at ~13:00 GMT, which is 23:00 AEST on Monday
-    # Runs every Tuesday at 01:00 to account for time difference and ensure data is fresh 
     command: >
-      "echo '0 1 * * 2 cd /app && python cotton_scraper.py >> /app/scraper.log 2>&1' > /etc/crontabs/root && crond -f -l 2"    
+      "echo '0 1 * * 2 cd /app && python commodity_scraper.py >> /app/scraper.log 2>&1' > /etc/crontabs/root && crond -f -l 2"
 
   db-gui:
     image: coleifer/sqlite-web
-    container_name: cotton-db-gui
+    container_name: siphon-db-gui
     ports:
       - "8080:8080"
     volumes:
       - db_data:/data
     command: "sqlite_web --read-only --host 0.0.0.0 /data/prices.db"
 
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   container_name: siphon-frontend
+  #   ports:
+  #     - "3000:80"
 volumes:
   db_data:
