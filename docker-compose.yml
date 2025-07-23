@@ -35,12 +35,12 @@ services:
       - db_data:/data
     command: "sqlite_web --read-only --host 0.0.0.0 /data/prices.db"
 
-  # frontend:
-  #   build:
-  #     context: ./frontend
-  #     dockerfile: Dockerfile
-  #   container_name: siphon-frontend
-  #   ports:
-  #     - "3000:80"
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: siphon-frontend
+    ports:
+      - "3000:80"
 volumes:
   db_data:
