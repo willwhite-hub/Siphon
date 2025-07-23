@@ -7,3 +7,6 @@ __pycache__/
 prices.json
 venv/
 .venv/
+node_modules
+npm-debug.log
+deploy_key

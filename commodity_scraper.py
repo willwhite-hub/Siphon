@@ -68,23 +68,6 @@ def scrape_cotton():
     percentage_change = round((change / previous_price) * 100, 2) if previous_price != 0 else 0.0
 
     date = datetime.now() # Use current date as publication date
-    # Get the date following the specific span
-    # date_span = soup.find(
-    #     "span", class_="show-for-sr", string=". Date of index value: "
-    # )
-    # if not date_span:
-    #     raise ValueError("Date span not found")
-
-    # # The actual date is in the next sibling text node
-    # pub_date_raw = date_span.next_sibling.strip()
-
-    # # Optional: parse the date into a datetime object
-    # try:
-    #     pub_date = parse_date(pub_date_raw)
-    # except ValueError:
-    #     raise ValueError(
-    #         f"Could not parse date: {pub_date_raw}"
-    #     )  # fallback to raw string if parsing fails
 
     return {
         "commodity": "Cotton (Cotlook A Index)",
@@ -230,9 +213,6 @@ def scrape_beef():
     
     # Get the date accessed
     date = datetime.now()  # Use current date as publication date
-    # Clean up the date
-    # current_year = datetime.now().year
-    # date_cleaned = datetime.strptime(f"{date}-{current_year}", "%d %b %Y")
 
     return {
         "commodity": "Beef (Eastern Young Cattle Indicator)",
