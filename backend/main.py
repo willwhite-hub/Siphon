@@ -1,7 +1,4 @@
-"""
-Main application file for the Agricultural Price Tracker.
-This file sets up the FastAPI application, defines endpoints, and manages the lifecycle of the app.
-"""
+
 import json
 from contextlib import asynccontextmanager
 from pathlib import Path
