@@ -1,4 +1,4 @@
-name: 🚀 Deploy to Server
+name: Deploy to Server
 
 on:
   push:
@@ -21,9 +21,9 @@ jobs:
 
     - name: Deploy to server
       run: |
-        ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+        ssh -tt ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
           cd ${{ secrets.PROJECT_DIR }}
           git pull origin main
-          docker compose down
-          docker compose up --build -d
+          docker-compose down
+          docker-compose up --build -d
         EOF

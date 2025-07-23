@@ -1,4 +1,56 @@
-deploy_key
+# === Python ===
 __pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.log
+*.sqlite3
+*.db
+*.env
+*.egg-info/
+.env/
+.venv/
+venv/
+data/prices.db
+prices.json
+
+# === FastAPI specific ===
+instance/
+*.sqlite
+*.db-journal
+
+# === Node.js / React ===
+node_modules/
+build/
+dist/
+.env.local
+.env.development
+.env.production
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# === VSCode ===
+.vscode/
+
+# === Docker ===
+*.pid
+docker-compose.override.yml
+
+# === GitHub Actions deploy keys ===
+deploy_key
 deploy_key.pub
-SiphonClean.zip
+
+# === macOS ===
+.DS_Store
+
+# === Windows ===
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# === Backup files ===
+*.bak
+*.swp
+*.tmp
+*~
