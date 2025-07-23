@@ -1,3 +1,6 @@
+"""
+Main application file for the Agricultural Price Tracker.
+"""
 import json
 from contextlib import asynccontextmanager
 from pathlib import Path
