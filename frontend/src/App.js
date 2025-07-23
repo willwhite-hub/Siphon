@@ -5,7 +5,7 @@ function App() {
   const [prices, setPrices] = useState([]);
 
   useEffect(() => {
-    axios.get('/api/prices')
+    axios.get('http://170.64.205.252:8000/prices')
       .then(res => {
         console.log("Data received:", res.data);
         setPrices(res.data);
