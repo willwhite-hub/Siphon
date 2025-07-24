@@ -45,7 +45,7 @@ services:
 
   proxy:
     build:
-      context: .
+      context: ./nginx
       dockerfile: nginx.Dockerfile
     container_name: siphon-proxy
     ports:
