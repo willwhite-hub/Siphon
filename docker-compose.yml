@@ -42,5 +42,17 @@ services:
     container_name: siphon-frontend
     ports:
       - "3000:80"
+
+  proxy:
+    build:
+      context: .
+      dockerfile: nginx.Dockerfile
+    container_name: siphon-proxy
+    ports:
+      - "80:80"
+    depends_on:
+      - web
+      - frontend
+
 volumes:
   db_data:
