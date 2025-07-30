@@ -205,7 +205,7 @@ def scrape_beef():
     # Extract the next sibling cells
     # date = row.find_next_sibling("td").text
     unit = "c/kg"
-    price = row.find_next_sibling("td").find_next_sibling("td").find_next_sibling("td").text
+    price = float(row.find_next_sibling("td").find_next_sibling("td").find_next_sibling("td").text)
     previous_price = row.find_next_sibling("td").find_next_sibling("td").find_next_sibling("td").find_next_sibling("td").text
     # Convert previous price to change
     change  = float(price) - float(previous_price)
