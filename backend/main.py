@@ -80,6 +80,10 @@ def get_prices():
     with open(PRICE_FILE, "r") as f:
         return json.load(f)
 
+@app.get("/api/prices")
+def get_api_prices():
+    return get_prices()
+
 # Add route for historical data
 @app.get("/history/{commodity}")
 def get_historical_prices(commodity: str, db: Session = Depends(get_db)):
