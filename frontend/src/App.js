@@ -46,7 +46,7 @@ function App() {
       <div className="container">
         <header className="header">
           <img 
-            src="/old_tucka_ag_brand.png" 
+            src="/brand_no_background.png" 
             alt="Old Tucka Agriculture" 
             className="brand-logo"
           />
