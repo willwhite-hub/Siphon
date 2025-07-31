@@ -95,7 +95,7 @@ function App() {
                       style={{ color: getChangeColor(item.change) }}
                     >
                       <span className="change-icon">{getChangeIcon(item.change)}</span>
-                      {item.change ? `${item.change}${item.change.toString().includes('%') ? '' : '%'}` : 'N/A'}
+                      Change: {item.change ? `${item.change}${item.change.toString().includes('%') ? '' : '%'}` : 'N/A'}
                     </span>
                   </div>
 
