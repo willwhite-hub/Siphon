@@ -74,12 +74,6 @@ function App() {
                 <div key={index} className="price-card">
                   <div className="card-header">
                     <h3 className="commodity-name">{item.commodity}</h3>
-                    <span 
-                      className="change-indicator"
-                      style={{ color: getChangeColor(item.change) }}
-                    >
-                      {getChangeIcon(item.change)}
-                    </span>
                   </div>
                   
                   <div className="price-section">
@@ -95,7 +89,7 @@ function App() {
                       style={{ color: getChangeColor(item.change) }}
                     >
                       <span className="change-icon">{getChangeIcon(item.change)}</span>
-                      Change: {item.change ? `${item.change}${item.change.toString().includes('%') ? '' : '%'}` : 'N/A'}
+{item.change ? `${item.change}${item.change.toString().includes('%') ? '' : '%'}` : 'N/A'}
                     </span>
                   </div>
 
