@@ -20,13 +20,13 @@ function App() {
   }, []);
 
   const getChangeColor = (change) => {
-    if (!change) return '#6c757d';
+    if (!change || typeof change !== 'string') return '#6c757d';
     const numChange = parseFloat(change.replace('%', ''));
     return numChange >= 0 ? '#28a745' : '#dc3545';
   };
 
   const getChangeIcon = (change) => {
-    if (!change) return '→';
+    if (!change || typeof change !== 'string') return '→';
     const numChange = parseFloat(change.replace('%', ''));
     return numChange >= 0 ? '↗' : '↘';
   };
