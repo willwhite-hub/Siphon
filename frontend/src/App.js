@@ -45,8 +45,12 @@ function App() {
     <div className="app">
       <div className="container">
         <header className="header">
+          <img 
+            src="/old_tucka_ag_brand.png" 
+            alt="Old Tucka Agriculture" 
+            className="brand-logo"
+          />
           <h1 className="title">
-            <span className="title-icon"></span>
             Commodity Market Dashboard
           </h1>
           <p className="subtitle">Real-time commodity prices and market trends</p>

@@ -6,7 +6,7 @@
 
 .app {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2d5a3d 0%, #4a8560 50%, #6ab187 100%);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
@@ -20,6 +20,18 @@
   text-align: center;
   margin-bottom: 3rem;
   color: white;
+}
+
+.brand-logo {
+  width: 150px;
+  height: auto;
+  margin-bottom: 1.5rem;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+  transition: transform 0.3s ease;
+}
+
+.brand-logo:hover {
+  transform: scale(1.05);
 }
 
 .title {
@@ -89,7 +101,7 @@
     0 8px 32px rgba(0,0,0,0.1),
     0 2px 8px rgba(0,0,0,0.05);
   transition: all 0.3s ease;
-  border: 1px solid rgba(255,255,255,0.2);
+  border: 1px solid rgba(106, 177, 135, 0.3);
 }
 
 .price-card:hover {
