@@ -54,3 +54,5 @@ desktop.ini
 *.swp
 *.tmp
 *~
+# === Images ===
+images/
