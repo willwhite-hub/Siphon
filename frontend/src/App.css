@@ -154,7 +154,15 @@
   padding: 0.5rem 1rem;
   border-radius: 25px;
   background: rgba(255,255,255,0.8);
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.change-icon {
+  font-size: 1.5rem;
+  font-weight: bold;
+  animation: bounce 2s infinite;
 }
 
 .card-footer {

@@ -36,7 +36,7 @@ function App() {
       <div className="container">
         <header className="header">
           <h1 className="title">
-            <span className="title-icon">📈</span>
+            <span className="title-icon"></span>
             Commodity Market Dashboard
           </h1>
           <p className="subtitle">Real-time commodity prices and market trends</p>
@@ -80,16 +80,17 @@ function App() {
                       className="change-value"
                       style={{ color: getChangeColor(item.change) }}
                     >
-                      {item.change || 'N/A'}
+                      <span className="change-icon">{getChangeIcon(item.change)}</span>
+                      {item.change ? `${item.change}${item.change.toString().includes('%') ? '' : '%'}` : 'N/A'}
                     </span>
                   </div>
 
                   <div className="card-footer">
                     <span className="timestamp">
-                      📅 {new Date(item.timestamp).toLocaleDateString()}
+                      {new Date(item.timestamp).toLocaleDateString()}
                     </span>
                     <span className="time">
-                      🕐 {new Date(item.timestamp).toLocaleTimeString()}
+                      {new Date(item.timestamp).toLocaleTimeString()}
                     </span>
                   </div>
                 </div>
