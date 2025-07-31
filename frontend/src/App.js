@@ -10,6 +10,10 @@ function App() {
     axios.get('/api/prices')
       .then(res => {
         console.log("Data received:", res.data);
+        // Debug: Log the change values
+        res.data.forEach(item => {
+          console.log(`${item.commodity}: change = "${item.change}" (type: ${typeof item.change})`);
+        });
         setPrices(res.data);
         setLoading(false);
       })
@@ -20,15 +24,21 @@ function App() {
   }, []);
 
   const getChangeColor = (change) => {
-    if (!change || typeof change !== 'string') return '#6c757d';
-    const numChange = parseFloat(change.replace('%', ''));
+    if (!change) return '#6c757d';
+    // Convert to string and handle both string and number inputs
+    const changeStr = change.toString();
+    const numChange = parseFloat(changeStr.replace('%', ''));
+    if (isNaN(numChange)) return '#6c757d';
     return numChange >= 0 ? '#28a745' : '#dc3545';
   };
 
   const getChangeIcon = (change) => {
-    if (!change || typeof change !== 'string') return '→';
-    const numChange = parseFloat(change.replace('%', ''));
-    return numChange >= 0 ? '↗' : '↘';
+    if (!change) return '→';
+    // Convert to string and handle both string and number inputs
+    const changeStr = change.toString();
+    const numChange = parseFloat(changeStr.replace('%', ''));
+    if (isNaN(numChange)) return '→';
+    return numChange > 0 ? '↗' : numChange < 0 ? '↘' : '→';
   };
 
   return (
