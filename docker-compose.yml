@@ -12,7 +12,7 @@ services:
 
   scraper:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
     container_name: siphon-scraper
     expose:
