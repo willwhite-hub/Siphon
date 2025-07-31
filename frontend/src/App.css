@@ -6,7 +6,7 @@
 
 .app {
   min-height: 100vh;
-  background: linear-gradient(135deg, #2d5a3d 0%, #4a8560 50%, #6ab187 100%);
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 50%, #f1f3f4 100%);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
@@ -19,7 +19,7 @@
 .header {
   text-align: center;
   margin-bottom: 3rem;
-  color: white;
+  color: #2d5a3d;
 }
 
 .brand-logo {
@@ -67,14 +67,14 @@
   align-items: center;
   justify-content: center;
   padding: 4rem;
-  color: white;
+  color: #2d5a3d;
 }
 
 .spinner {
   width: 50px;
   height: 50px;
-  border: 4px solid rgba(255,255,255,0.3);
-  border-top: 4px solid white;
+  border: 4px solid rgba(45, 90, 61, 0.3);
+  border-top: 4px solid #2d5a3d;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 1rem;
@@ -93,22 +93,23 @@
 }
 
 .price-card {
-  background: rgba(255, 255, 255, 0.95);
+  background: linear-gradient(135deg, #4a8560 0%, #6ab187 100%);
   backdrop-filter: blur(10px);
   border-radius: 20px;
   padding: 2rem;
   box-shadow: 
-    0 8px 32px rgba(0,0,0,0.1),
-    0 2px 8px rgba(0,0,0,0.05);
+    0 8px 32px rgba(45, 90, 61, 0.2),
+    0 2px 8px rgba(45, 90, 61, 0.1);
   transition: all 0.3s ease;
-  border: 1px solid rgba(106, 177, 135, 0.3);
+  border: 1px solid rgba(45, 90, 61, 0.2);
+  color: white;
 }
 
 .price-card:hover {
   transform: translateY(-5px);
   box-shadow: 
-    0 16px 48px rgba(0,0,0,0.15),
-    0 4px 16px rgba(0,0,0,0.1);
+    0 16px 48px rgba(45, 90, 61, 0.25),
+    0 4px 16px rgba(45, 90, 61, 0.15);
 }
 
 .card-header {
@@ -123,7 +124,7 @@
 .commodity-name {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #2c3e50;
+  color: white;
 }
 
 .change-indicator {
@@ -144,7 +145,7 @@
 .price-value {
   font-size: 2.5rem;
   font-weight: 700;
-  color: #2c3e50;
+  color: white;
   display: flex;
   align-items: baseline;
   gap: 0.5rem;
@@ -153,7 +154,7 @@
 .price-unit {
   font-size: 1rem;
   font-weight: 400;
-  color: #6c757d;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .change-section {
@@ -165,7 +166,8 @@
   font-weight: 600;
   padding: 0.5rem 1rem;
   border-radius: 25px;
-  background: rgba(255,255,255,0.8);
+  background: rgba(255,255,255,0.2);
+  color: white;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -182,9 +184,9 @@
   justify-content: space-between;
   align-items: center;
   padding-top: 1rem;
-  border-top: 1px solid #e9ecef;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
   font-size: 0.9rem;
-  color: #6c757d;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .timestamp, .time {
@@ -217,10 +219,10 @@
 
 .footer {
   text-align: center;
-  color: rgba(255,255,255,0.8);
+  color: rgba(45, 90, 61, 0.8);
   font-size: 0.9rem;
   padding-top: 2rem;
-  border-top: 1px solid rgba(255,255,255,0.2);
+  border-top: 1px solid rgba(45, 90, 61, 0.2);
 }
 
 /* Responsive Design */
