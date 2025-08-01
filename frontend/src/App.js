@@ -5,8 +5,7 @@ import './App.css';
 function App() {
   const [prices, setPrices] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [historicalData, setHistoricalData] = useState({});
-  const [expandedCards, setExpandedCards] = useState({});
+  const [expandedCommodities, setExpandedCommodities] = useState({});
 
   useEffect(() => {
     axios.get('http://localhost:8000/api/prices')
@@ -25,47 +24,14 @@ function App() {
       });
   }, []);
 
-  const fetchHistoricalData = async (commodity) => {
-    try {
-      const response = await axios.get(`http://localhost:8000/history/${commodity.toLowerCase()}`);
-      
-      // Filter to show only one price per day (most recent for each date)
-      const dailyPrices = {};
-      response.data.forEach(item => {
-        const date = new Date(item.timestamp).toDateString();
-        if (!dailyPrices[date] || new Date(item.timestamp) > new Date(dailyPrices[date].timestamp)) {
-          dailyPrices[date] = item;
-        }
-      });
-      
-      // Convert back to array and sort by date (newest first)
-      const filteredData = Object.values(dailyPrices)
-        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-      
-      setHistoricalData(prev => ({
-        ...prev,
-        [commodity]: filteredData
-      }));
-    } catch (error) {
-      console.error(`Error fetching historical data for ${commodity}:`, error);
-      setHistoricalData(prev => ({
-        ...prev,
-        [commodity]: []
-      }));
-    }
-  };
-
-  const toggleCard = (commodity) => {
-    const isExpanded = !expandedCards[commodity];
+  const toggleCommodity = (commodityName) => {
+    const isExpanded = !expandedCommodities[commodityName];
     
-    // Close all cards and only open the clicked one (if it wasn't already open)
+    // Close all commodities and only open the clicked one (if it wasn't already open)
     if (isExpanded) {
-      setExpandedCards({ [commodity]: true });
-      if (!historicalData[commodity]) {
-        fetchHistoricalData(commodity);
-      }
+      setExpandedCommodities({ [commodityName]: true });
     } else {
-      setExpandedCards({});
+      setExpandedCommodities({});
     }
   };
 
@@ -108,7 +74,7 @@ function App() {
             <p>Loading market data...</p>
           </div>
         ) : (
-          <div className="cards-grid">
+          <div className="commodity-selector">
             {prices.length === 0 ? (
               <div className="no-data">
                 <span className="no-data-icon">📊</span>
@@ -116,74 +82,61 @@ function App() {
                 <p>Market data is currently unavailable. Please try again later.</p>
               </div>
             ) : (
-              prices.map((item, index) => (
-                <div key={index} className="price-card">
-                  <div className="card-header">
-                    <h3 className="commodity-name">{item.commodity}</h3>
-                  </div>
-                  
-                  <div className="price-section">
-                    <div className="price-value">
-                      {item.price}
-                      <span className="price-unit">{item.unit}</span>
-                    </div>
-                  </div>
-
-                  <div className="change-section">
-                    <span 
-                      className="change-value"
-                      style={{ color: getChangeColor(item.change) }}
+              <div className="commodities-container">
+                {prices.map((item, index) => (
+                  <div key={index} className="commodity-column">
+                    <div 
+                      className={`commodity-item ${expandedCommodities[item.commodity] ? 'active' : ''}`}
+                      onClick={() => toggleCommodity(item.commodity)}
                     >
-                      <span className="change-icon">{getChangeIcon(item.change)}</span>
-{item.change ? `${item.change}${item.change.toString().includes('%') ? '' : '%'}` : 'N/A'}
-                    </span>
-                  </div>
+                      <span className="commodity-name-selector">
+                        {item.commodity.split(' ')[0]} {/* Show first word (Wheat, Barley, etc.) */}
+                      </span>
+                      <span className="dropdown-arrow">
+                        {expandedCommodities[item.commodity] ? '▲' : '▼'}
+                      </span>
+                    </div>
+                    
+                    {expandedCommodities[item.commodity] && (
+                      <div className="expanded-commodity-card">
+                        <div className="price-card expanded">
+                          <div className="card-header">
+                            <h3 className="commodity-name">{item.commodity}</h3>
+                          </div>
+                          
+                          <div className="price-section">
+                            <div className="price-value">
+                              {item.price}
+                              <span className="price-unit">{item.unit}</span>
+                            </div>
+                          </div>
 
-                  {expandedCards[item.commodity] && (
-                    <div className="historical-section">
-                      <h4 className="historical-title">Historical Prices</h4>
-                      <div className="historical-list">
-                        {historicalData[item.commodity] ? (
-                          historicalData[item.commodity].length > 0 ? (
-                            historicalData[item.commodity].slice(0, 5).map((historical, idx) => (
-                              <div key={idx} className="historical-item">
-                                <span className="historical-price">
-                                  {historical.price} {historical.unit}
-                                </span>
-                                <span className="historical-date">
-                                  {new Date(historical.timestamp).toLocaleDateString()}
-                                </span>
-                              </div>
-                            ))
-                          ) : (
-                            <div className="no-historical">No historical data available</div>
-                          )
-                        ) : (
-                          <div className="loading-historical">Loading...</div>
-                        )}
+                          <div className="change-section">
+                            <span 
+                              className="change-value"
+                              style={{ color: getChangeColor(item.change) }}
+                            >
+                              <span className="change-icon">{getChangeIcon(item.change)}</span>
+                              {item.change ? `${item.change}${item.change.toString().includes('%') ? '' : '%'}` : 'N/A'}
+                            </span>
+                          </div>
+
+                          <div className="card-footer">
+                            <div className="timestamp-section">
+                              <span className="timestamp">
+                                {new Date(item.timestamp).toLocaleDateString()}
+                              </span>
+                              <span className="time">
+                                {new Date(item.timestamp).toLocaleTimeString()}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  )}
-
-                  <div className="card-footer">
-                    <div className="timestamp-section">
-                      <span className="timestamp">
-                        {new Date(item.timestamp).toLocaleDateString()}
-                      </span>
-                      <span className="time">
-                        {new Date(item.timestamp).toLocaleTimeString()}
-                      </span>
-                    </div>
-                    <button 
-                      className="dropdown-toggle"
-                      onClick={() => toggleCard(item.commodity)}
-                    >
-                      <span className="historical-label">Historical Data</span>
-                      {expandedCards[item.commodity] ? '▲' : '▼'}
-                    </button>
+                    )}
                   </div>
-                </div>
-              ))
+                ))}
+              </div>
             )}
           </div>
         )}
