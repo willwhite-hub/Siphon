@@ -8,7 +8,7 @@ function App() {
   const [expandedCommodities, setExpandedCommodities] = useState({});
 
   useEffect(() => {
-    axios.get('http://localhost:8000/api/prices')
+    axios.get('/api/prices')
       .then(res => {
         console.log("Data received:", res.data);
         // Debug: Log the change values
