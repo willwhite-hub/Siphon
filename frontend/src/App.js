@@ -5,9 +5,11 @@ import './App.css';
 function App() {
   const [prices, setPrices] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [historicalData, setHistoricalData] = useState({});
+  const [expandedCards, setExpandedCards] = useState({});
 
   useEffect(() => {
-    axios.get('/api/prices')
+    axios.get('http://localhost:8000/api/prices')
       .then(res => {
         console.log("Data received:", res.data);
         // Debug: Log the change values
@@ -22,6 +24,50 @@ function App() {
         setLoading(false);
       });
   }, []);
+
+  const fetchHistoricalData = async (commodity) => {
+    try {
+      const response = await axios.get(`http://localhost:8000/history/${commodity.toLowerCase()}`);
+      
+      // Filter to show only one price per day (most recent for each date)
+      const dailyPrices = {};
+      response.data.forEach(item => {
+        const date = new Date(item.timestamp).toDateString();
+        if (!dailyPrices[date] || new Date(item.timestamp) > new Date(dailyPrices[date].timestamp)) {
+          dailyPrices[date] = item;
+        }
+      });
+      
+      // Convert back to array and sort by date (newest first)
+      const filteredData = Object.values(dailyPrices)
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      
+      setHistoricalData(prev => ({
+        ...prev,
+        [commodity]: filteredData
+      }));
+    } catch (error) {
+      console.error(`Error fetching historical data for ${commodity}:`, error);
+      setHistoricalData(prev => ({
+        ...prev,
+        [commodity]: []
+      }));
+    }
+  };
+
+  const toggleCard = (commodity) => {
+    const isExpanded = !expandedCards[commodity];
+    
+    // Close all cards and only open the clicked one (if it wasn't already open)
+    if (isExpanded) {
+      setExpandedCards({ [commodity]: true });
+      if (!historicalData[commodity]) {
+        fetchHistoricalData(commodity);
+      }
+    } else {
+      setExpandedCards({});
+    }
+  };
 
   const getChangeColor = (change) => {
     if (!change) return '#6c757d';
@@ -93,13 +139,48 @@ function App() {
                     </span>
                   </div>
 
+                  {expandedCards[item.commodity] && (
+                    <div className="historical-section">
+                      <h4 className="historical-title">Historical Prices</h4>
+                      <div className="historical-list">
+                        {historicalData[item.commodity] ? (
+                          historicalData[item.commodity].length > 0 ? (
+                            historicalData[item.commodity].slice(0, 5).map((historical, idx) => (
+                              <div key={idx} className="historical-item">
+                                <span className="historical-price">
+                                  {historical.price} {historical.unit}
+                                </span>
+                                <span className="historical-date">
+                                  {new Date(historical.timestamp).toLocaleDateString()}
+                                </span>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="no-historical">No historical data available</div>
+                          )
+                        ) : (
+                          <div className="loading-historical">Loading...</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="card-footer">
-                    <span className="timestamp">
-                      {new Date(item.timestamp).toLocaleDateString()}
-                    </span>
-                    <span className="time">
-                      {new Date(item.timestamp).toLocaleTimeString()}
-                    </span>
+                    <div className="timestamp-section">
+                      <span className="timestamp">
+                        {new Date(item.timestamp).toLocaleDateString()}
+                      </span>
+                      <span className="time">
+                        {new Date(item.timestamp).toLocaleTimeString()}
+                      </span>
+                    </div>
+                    <button 
+                      className="dropdown-toggle"
+                      onClick={() => toggleCard(item.commodity)}
+                    >
+                      <span className="historical-label">Historical Data</span>
+                      {expandedCards[item.commodity] ? '▲' : '▼'}
+                    </button>
                   </div>
                 </div>
               ))

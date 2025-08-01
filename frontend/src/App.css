@@ -23,11 +23,12 @@
 }
 
 .brand-logo {
-  width: 150px;
+  width: 262.5px;
   height: auto;
   margin-bottom: 1.5rem;
   filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
   transition: transform 0.3s ease;
+  max-width: 90vw;
 }
 
 .brand-logo:hover {
@@ -121,6 +122,30 @@
   border-bottom: 2px solid #f8f9fa;
 }
 
+.dropdown-toggle {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  border-radius: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+  transition: all 0.3s ease;
+}
+
+.dropdown-toggle:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+.historical-label {
+  font-weight: 500;
+}
+
 .commodity-name {
   font-size: 1.5rem;
   font-weight: 600;
@@ -161,6 +186,56 @@
   margin-bottom: 1.5rem;
 }
 
+.historical-section {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.historical-title {
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.8rem;
+  text-align: center;
+}
+
+.historical-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.historical-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 5px;
+  font-size: 0.9rem;
+}
+
+.historical-price {
+  color: white;
+  font-weight: 600;
+}
+
+.historical-date {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.8rem;
+}
+
+.no-historical,
+.loading-historical {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.7);
+  font-style: italic;
+  padding: 1rem;
+}
+
 .change-value {
   font-size: 1.3rem;
   font-weight: 600;
@@ -187,6 +262,12 @@
   border-top: 1px solid rgba(255, 255, 255, 0.2);
   font-size: 0.9rem;
   color: rgba(255, 255, 255, 0.8);
+}
+
+.timestamp-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
 }
 
 .timestamp, .time {
@@ -231,6 +312,11 @@
     padding: 1rem;
   }
   
+  .brand-logo {
+    width: 200px;
+    max-width: 80vw;
+  }
+  
   .title {
     font-size: 2rem;
   }
@@ -260,6 +346,11 @@
 }
 
 @media (max-width: 480px) {
+  .brand-logo {
+    width: 175px;
+    max-width: 75vw;
+  }
+  
   .title {
     font-size: 1.5rem;
     flex-direction: column;
