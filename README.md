@@ -26,33 +26,6 @@ The modern React-based dashboard features:
 - **Responsive Design**: Works on desktop, tablet, and mobile devices
 - **Old Tucka Agriculture Branding**: Professional agricultural theme
 
-### Development Mode
-To run the frontend in development mode:
-```bash
-cd frontend
-npm install
-npm start
-# Opens http://localhost:3000
-```
-
-The dashboard fetches live data from the FastAPI backend and updates automatically.
-
----
-
-## Development (Without Docker)
-
-```bash
-# Install dependencies
-pip install -r requirements.txt
-
-# Initialize DB
-python -c "from db import init_db; init_db()"
-
-# Run FastAPI app
-uvicorn main:app --reload
-```
-
----
 
 ## Project Structure
 
