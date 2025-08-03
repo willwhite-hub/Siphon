@@ -26,6 +26,7 @@ The modern React-based dashboard features:
 - **Responsive Design**: Works on desktop, tablet, and mobile devices
 - **Old Tucka Agriculture Branding**: Professional agricultural theme
 
+---
 
 ## Project Structure
 
