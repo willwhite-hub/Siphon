@@ -18,8 +18,10 @@ def scrape_commodity(commodity: str):
     Raises:
         ValueError: If the commodity is not supported.
     """
-    if commodity.lower() == "cotton":
+    if commodity.lower() == "cotlook_A_index":
         return scrape_cotton()
+    elif commodity.lower() == "cotton_futures":
+        return scrape_cotton_futures()
     elif commodity.lower() == "wheat":
         return scrape_wheat()
     elif commodity.lower() == "barley":
@@ -78,6 +80,163 @@ def scrape_cotton():
         "source": url,
         "timestamp": date,
     }
+
+def scrape_cotton_futures():
+    """
+    Scrape the latest cotton futures prices from Barchart.
+    """
+
+    url = "https://www.barchart.com/futures/quotes/ct*0/futures-prices"
+
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Connection": "keep-alive",
+        "Upgrade-Insecure-Requests": "1",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none"
+    }
+
+    try:
+        response = requests.get(url, headers=headers, timeout=30)
+        response.raise_for_status()
+        
+        soup = BeautifulSoup(response.text, "html.parser")
+        
+        # Method 1: Look for the futures table - Barchart typically uses tables
+        price_data = None
+        change_data = None
+        change_percent = None
+        
+        # Find the main futures table
+        table = soup.find("table", class_=re.compile(r"table|futures|quotes", re.I))
+        if not table:
+            # Try finding any table with futures data
+            tables = soup.find_all("table")
+            for t in tables:
+                if "CT" in t.get_text() or "cotton" in t.get_text().lower():
+                    table = t
+                    break
+        
+        if table:
+            # Look for the first row with CT data (usually the front month contract)
+            rows = table.find_all("tr")
+            for row in rows:
+                cells = row.find_all(["td", "th"])
+                if len(cells) >= 4:  # Ensure we have enough columns
+                    # Check if this row contains cotton futures data
+                    first_cell_text = cells[0].get_text(strip=True)
+                    if re.match(r"CT[A-Z]?\d{2}", first_cell_text) or "CT" in first_cell_text:
+                        try:
+                            # Typical Barchart table structure:
+                            # Symbol | Last | Change | % Change | High | Low | etc.
+                            
+                            # Extract price (usually in column 1 or 2)
+                            for i in range(1, min(4, len(cells))):  # Check first few columns for price
+                                price_text = cells[i].get_text(strip=True)
+                                price_match = re.search(r'([0-9]+\.?[0-9]+)', price_text)
+                                if price_match:
+                                    potential_price = float(price_match.group(1))
+                                    if 40 < potential_price < 200:  # Reasonable cotton price range in cents
+                                        price_data = potential_price
+                                        break
+                            
+                            # Extract change (usually next column after price)
+                            if price_data:
+                                for i in range(2, min(5, len(cells))):
+                                    change_text = cells[i].get_text(strip=True)
+                                    # Look for change value (could be +/- with numbers)
+                                    change_match = re.search(r'([+-]?[0-9]+\.?[0-9]*)', change_text)
+                                    if change_match:
+                                        change_data = float(change_match.group(1))
+                                        break
+                                
+                                # Look for percentage change
+                                for i in range(3, min(6, len(cells))):
+                                    percent_text = cells[i].get_text(strip=True)
+                                    percent_match = re.search(r'([+-]?[0-9]+\.?[0-9]*)%', percent_text)
+                                    if percent_match:
+                                        change_percent = float(percent_match.group(1))
+                                        break
+                                
+                                break  # Found our data, exit the row loop
+                        except (ValueError, IndexError):
+                            continue
+        
+        # Method 2: Look for specific CSS classes or data attributes that Barchart uses
+        if not price_data:
+            # Look for common price display elements
+            price_elements = soup.find_all(["span", "div", "td"], 
+                                         class_=re.compile(r"price|last|quote|value", re.I))
+            
+            for element in price_elements:
+                text = element.get_text(strip=True)
+                # Look for price pattern
+                price_match = re.search(r'([0-9]{2,3}\.?[0-9]*)', text)
+                if price_match:
+                    potential_price = float(price_match.group(1))
+                    if 40 < potential_price < 200:  # Cotton price range check
+                        price_data = potential_price
+                        
+                        # Try to find change data in nearby elements
+                        parent = element.parent
+                        if parent:
+                            siblings = parent.find_all(["span", "div", "td"])
+                            for sibling in siblings:
+                                sibling_text = sibling.get_text(strip=True)
+                                change_match = re.search(r'([+-][0-9]+\.?[0-9]*)', sibling_text)
+                                if change_match:
+                                    change_data = float(change_match.group(1))
+                                percent_match = re.search(r'([+-][0-9]+\.?[0-9]*)%', sibling_text)
+                                if percent_match:
+                                    change_percent = float(percent_match.group(1))
+                        break
+        
+        if not price_data:
+            raise ValueError("Could not extract cotton futures price from Barchart")
+        
+        # Convert price from US cents to AUD$/bale
+        exchange_rate = get_usd_to_aud()
+        if exchange_rate is None:
+            raise ValueError("Could not fetch exchange rate for USD to AUD")
+        
+        # Cotton futures are in US cents per pound, convert to AUD$/bale
+        # 1 bale ≈ 500 pounds, price is in cents so divide by 100 for dollars
+        price_aud = round(((price_data * exchange_rate) / 100) * 500, 2)
+        
+        # Use percentage change if available, otherwise calculate from raw change
+        if change_percent is not None:
+            final_change = change_percent
+        elif change_data is not None:
+            # Calculate percentage change from raw change value
+            previous_price = price_data - change_data
+            if previous_price != 0:
+                final_change = round((change_data / previous_price) * 100, 2)
+            else:
+                final_change = 0.0
+        else:
+            final_change = 0.0
+        
+        # Use current timestamp
+        current_time = datetime.now()
+        
+        return {
+            "commodity": "Cotton (CT Futures)",
+            "price": price_aud,
+            "currency": "AUD",
+            "change": final_change,
+            "unit": "$/bale",
+            "source": url,
+            "timestamp": current_time,
+        }
+        
+    except requests.RequestException as e:
+        raise ValueError(f"Failed to fetch data from Barchart: {e}")
+    except Exception as e:
+        raise ValueError(f"Error processing Barchart data: {e}")
 
 def scrape_wheat():
     url = "https://www.dpi.nsw.gov.au/agriculture/commodity-report"

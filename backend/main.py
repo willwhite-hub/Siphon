@@ -14,7 +14,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 PRICE_FILE = Path("prices.json")
-SUPPORTED_COMMODITIES = ["cotton", "wheat", "barley", "beef"]
+SUPPORTED_COMMODITIES = ["cotlook_A_index", "cotton_futures", "wheat", "barley", "beef"]
 
 
 def get_db():
