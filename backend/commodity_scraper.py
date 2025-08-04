@@ -18,7 +18,7 @@ def scrape_commodity(commodity: str):
     Raises:
         ValueError: If the commodity is not supported.
     """
-    if commodity.lower() == "cotlook_A_index":
+    if commodity.lower() == "cotlook_a_index":
         return scrape_cotton()
     elif commodity.lower() == "cotton_futures":
         return scrape_cotton_futures()
@@ -83,11 +83,53 @@ def scrape_cotton():
 
 def scrape_cotton_futures():
     """
-    Scrape the latest cotton futures prices from Barchart.
+    Scrape the 5 most recent cotton futures contracts including cash from Barchart.
+    Returns a list of contract data.
     """
-
-    url = "https://www.barchart.com/futures/quotes/ct*0/futures-prices"
-
+    from datetime import datetime as dt
+    
+    # Cotton futures trade with contract months: March (H), May (K), July (N), October (V), December (Z)
+    current_month = dt.now().month
+    current_year = dt.now().year % 100  # Get last 2 digits of year
+    next_year = (current_year + 1) % 100
+    
+    # Define the contract month codes and their corresponding months
+    contract_months = [
+        (3, "H"),   # March
+        (5, "K"),   # May
+        (7, "N"),   # July
+        (10, "V"),  # October
+        (12, "Z")   # December
+    ]
+    
+    # Build list of 5 most recent contracts including cash
+    contracts_to_scrape = []
+    
+    # Add cash/spot contract
+    contracts_to_scrape.append(("Cotton Cash", "https://www.barchart.com/futures/quotes/cotton"))
+    
+    # Generate next 4 contract months
+    contracts_added = 0
+    year_to_check = current_year
+    
+    for _ in range(2):  # Check current and next year
+        for month_num, month_code in contract_months:
+            if contracts_added >= 4:  # We want 4 futures + 1 cash = 5 total
+                break
+                
+            # Only add contracts that are in the future or current month
+            if year_to_check == current_year and month_num < current_month:
+                continue
+                
+            symbol = f"CT{month_code}{year_to_check:02d}"
+            url = f"https://www.barchart.com/futures/quotes/{symbol}"
+            contracts_to_scrape.append((f"Cotton {month_code}{year_to_check:02d}", url))
+            contracts_added += 1
+            
+        year_to_check = next_year
+        if contracts_added >= 4:
+            break
+    
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
@@ -95,148 +137,298 @@ def scrape_cotton_futures():
         "Accept-Encoding": "gzip, deflate, br",
         "Connection": "keep-alive",
         "Upgrade-Insecure-Requests": "1",
-        "Sec-Fetch-Dest": "document",
-        "Sec-Fetch-Mode": "navigate",
-        "Sec-Fetch-Site": "none"
     }
-
-    try:
-        response = requests.get(url, headers=headers, timeout=30)
-        response.raise_for_status()
-        
-        soup = BeautifulSoup(response.text, "html.parser")
-        
-        # Method 1: Look for the futures table - Barchart typically uses tables
-        price_data = None
-        change_data = None
-        change_percent = None
-        
-        # Find the main futures table
-        table = soup.find("table", class_=re.compile(r"table|futures|quotes", re.I))
-        if not table:
-            # Try finding any table with futures data
-            tables = soup.find_all("table")
-            for t in tables:
-                if "CT" in t.get_text() or "cotton" in t.get_text().lower():
-                    table = t
-                    break
-        
-        if table:
-            # Look for the first row with CT data (usually the front month contract)
-            rows = table.find_all("tr")
-            for row in rows:
-                cells = row.find_all(["td", "th"])
-                if len(cells) >= 4:  # Ensure we have enough columns
-                    # Check if this row contains cotton futures data
-                    first_cell_text = cells[0].get_text(strip=True)
-                    if re.match(r"CT[A-Z]?\d{2}", first_cell_text) or "CT" in first_cell_text:
-                        try:
-                            # Typical Barchart table structure:
-                            # Symbol | Last | Change | % Change | High | Low | etc.
-                            
-                            # Extract price (usually in column 1 or 2)
-                            for i in range(1, min(4, len(cells))):  # Check first few columns for price
-                                price_text = cells[i].get_text(strip=True)
-                                price_match = re.search(r'([0-9]+\.?[0-9]+)', price_text)
-                                if price_match:
-                                    potential_price = float(price_match.group(1))
-                                    if 40 < potential_price < 200:  # Reasonable cotton price range in cents
-                                        price_data = potential_price
-                                        break
-                            
-                            # Extract change (usually next column after price)
-                            if price_data:
-                                for i in range(2, min(5, len(cells))):
-                                    change_text = cells[i].get_text(strip=True)
-                                    # Look for change value (could be +/- with numbers)
-                                    change_match = re.search(r'([+-]?[0-9]+\.?[0-9]*)', change_text)
-                                    if change_match:
-                                        change_data = float(change_match.group(1))
-                                        break
-                                
-                                # Look for percentage change
-                                for i in range(3, min(6, len(cells))):
-                                    percent_text = cells[i].get_text(strip=True)
-                                    percent_match = re.search(r'([+-]?[0-9]+\.?[0-9]*)%', percent_text)
-                                    if percent_match:
-                                        change_percent = float(percent_match.group(1))
-                                        break
-                                
-                                break  # Found our data, exit the row loop
-                        except (ValueError, IndexError):
-                            continue
-        
-        # Method 2: Look for specific CSS classes or data attributes that Barchart uses
-        if not price_data:
-            # Look for common price display elements
-            price_elements = soup.find_all(["span", "div", "td"], 
-                                         class_=re.compile(r"price|last|quote|value", re.I))
+    
+    def scrape_single_contract(contract_name, url):
+        """Scrape a single cotton contract"""
+        try:
+            response = requests.get(url, headers=headers, timeout=30)
+            response.raise_for_status()
             
-            for element in price_elements:
-                text = element.get_text(strip=True)
-                # Look for price pattern
-                price_match = re.search(r'([0-9]{2,3}\.?[0-9]*)', text)
-                if price_match:
-                    potential_price = float(price_match.group(1))
-                    if 40 < potential_price < 200:  # Cotton price range check
+            soup = BeautifulSoup(response.text, "html.parser")
+            page_text = soup.get_text()
+            
+            price_data = None
+            change_data = None
+            change_percent = None
+            
+            # Method 1: Look for "Last Price" pattern in text
+            last_price_match = re.search(r'Last Price[:\s]*([0-9]+\.?[0-9]*)', page_text, re.IGNORECASE)
+            if last_price_match:
+                potential_price = float(last_price_match.group(1))
+                if 40 < potential_price < 200:  # Reasonable cotton price range in cents
+                    price_data = potential_price
+            
+            # Method 2: Look for price patterns in the text content
+            if not price_data:
+                price_patterns = re.findall(r'([0-9]{2,3}\.[0-9]{1,2})[s]?', page_text)
+                for price_str in price_patterns:
+                    potential_price = float(price_str)
+                    if 40 < potential_price < 200:
                         price_data = potential_price
-                        
-                        # Try to find change data in nearby elements
-                        parent = element.parent
-                        if parent:
-                            siblings = parent.find_all(["span", "div", "td"])
-                            for sibling in siblings:
-                                sibling_text = sibling.get_text(strip=True)
-                                change_match = re.search(r'([+-][0-9]+\.?[0-9]*)', sibling_text)
-                                if change_match:
-                                    change_data = float(change_match.group(1))
-                                percent_match = re.search(r'([+-][0-9]+\.?[0-9]*)%', sibling_text)
-                                if percent_match:
-                                    change_percent = float(percent_match.group(1))
                         break
-        
-        if not price_data:
-            raise ValueError("Could not extract cotton futures price from Barchart")
-        
-        # Convert price from US cents to AUD$/bale
-        exchange_rate = get_usd_to_aud()
-        if exchange_rate is None:
-            raise ValueError("Could not fetch exchange rate for USD to AUD")
-        
-        # Cotton futures are in US cents per pound, convert to AUD$/bale
-        # 1 bale ≈ 500 pounds, price is in cents so divide by 100 for dollars
-        price_aud = round(((price_data * exchange_rate) / 100) * 500, 2)
-        
-        # Use percentage change if available, otherwise calculate from raw change
-        if change_percent is not None:
-            final_change = change_percent
-        elif change_data is not None:
-            # Calculate percentage change from raw change value
-            previous_price = price_data - change_data
-            if previous_price != 0:
-                final_change = round((change_data / previous_price) * 100, 2)
+            
+            # Method 3: Look in specific HTML elements
+            if not price_data:
+                for tag in ['span', 'div', 'td']:
+                    elements = soup.find_all(tag, string=re.compile(r'[0-9]{2,3}\.[0-9]{2}'))
+                    for elem in elements:
+                        text = elem.get_text(strip=True)
+                        price_match = re.search(r'([0-9]{2,3}\.[0-9]{2})', text)
+                        if price_match:
+                            potential_price = float(price_match.group(1))
+                            if 40 < potential_price < 200:
+                                price_data = potential_price
+                                break
+                    if price_data:
+                        break
+            
+            # If we found price data, look for change data
+            if price_data:
+                # Look for change patterns
+                change_patterns = re.findall(r'([+-][0-9]+\.[0-9]+)', page_text)
+                if change_patterns:
+                    try:
+                        change_data = float(change_patterns[0])
+                    except (ValueError, IndexError):
+                        pass
+                
+                # Look for percentage patterns
+                percent_patterns = re.findall(r'([+-]?[0-9]+\.[0-9]+)%', page_text)
+                if percent_patterns:
+                    try:
+                        change_percent = float(percent_patterns[0])
+                    except (ValueError, IndexError):
+                        pass
+            
+            if not price_data:
+                return None
+            
+            # Convert price from US cents to AUD$/bale
+            exchange_rate = get_usd_to_aud()
+            if exchange_rate is None:
+                return None
+            
+            # Cotton futures are in US cents per pound, convert to AUD$/bale
+            price_aud = round(((price_data * exchange_rate) / 100) * 500, 2)
+            
+            # Use percentage change if available, otherwise calculate from raw change
+            if change_percent is not None:
+                final_change = change_percent
+            elif change_data is not None:
+                previous_price = price_data - change_data
+                if previous_price != 0:
+                    final_change = round((change_data / previous_price) * 100, 2)
+                else:
+                    final_change = 0.0
             else:
                 final_change = 0.0
-        else:
-            final_change = 0.0
+            
+            return {
+                "commodity": f"Cotton ({contract_name})",
+                "price": price_aud,
+                "currency": "AUD",
+                "change": final_change,
+                "unit": "$/bale",
+                "source": url,
+                "timestamp": datetime.now(),
+            }
+            
+        except Exception:
+            return None
+    
+    # Scrape all contracts
+    results = []
+    for contract_name, url in contracts_to_scrape:
+        contract_data = scrape_single_contract(contract_name, url)
+        if contract_data:
+            results.append(contract_data)
+    
+    if not results:
+        raise ValueError("Could not extract any cotton futures prices from Barchart")
+    
+    # Return the first successful contract for backward compatibility
+    # (the app expects a single dict, not a list)
+    return results[0]
+
+def scrape_cotton_futures_all():
+    """
+    Scrape all 5 cotton futures contracts including cash from Barchart.
+    Returns a list of all contract data.
+    """
+    from datetime import datetime as dt
+    
+    # Cotton futures trade with contract months: March (H), May (K), July (N), October (V), December (Z)
+    current_month = dt.now().month
+    current_year = dt.now().year % 100  # Get last 2 digits of year
+    current_full_year = dt.now().year
+    
+    # Define the contract month codes and their corresponding months
+    contract_months = [
+        (3, "H"),   # March
+        (5, "K"),   # May
+        (7, "N"),   # July
+        (10, "V"),  # October
+        (12, "Z")   # December
+    ]
+    
+    # Build list of 5 most recent contracts including cash
+    contracts_to_scrape = []
+    
+    # Add cash/spot contract - this will show as CTY00 (Cash)
+    contracts_to_scrape.append(("Cotton Cash", "https://www.barchart.com/futures/quotes/cotton"))
+    
+    # Generate the next 4-5 active contract months starting from current/next active month
+    all_possible_contracts = []
+    
+    # Build list of all possible contracts for the next 18 months
+    for year_offset in range(3):  # Check current year and next 2 years
+        check_year = (current_year + year_offset) % 100
+        check_full_year = current_full_year + year_offset
         
-        # Use current timestamp
-        current_time = datetime.now()
-        
-        return {
-            "commodity": "Cotton (CT Futures)",
-            "price": price_aud,
-            "currency": "AUD",
-            "change": final_change,
-            "unit": "$/bale",
-            "source": url,
-            "timestamp": current_time,
-        }
-        
-    except requests.RequestException as e:
-        raise ValueError(f"Failed to fetch data from Barchart: {e}")
-    except Exception as e:
-        raise ValueError(f"Error processing Barchart data: {e}")
+        for month_num, month_code in contract_months:
+            # For current year, only add contracts that haven't expired (or are in current month)
+            if year_offset == 0 and month_num < current_month:
+                continue
+            
+            # Create contract date for sorting
+            contract_date = dt(check_full_year, month_num, 1)
+            
+            all_possible_contracts.append({
+                'symbol': f"CT{month_code}{check_year:02d}",
+                'name': f"Cotton {month_code}{check_year:02d}",
+                'url': f"https://www.barchart.com/futures/quotes/CT{month_code}{check_year:02d}",
+                'date': contract_date,
+                'month_code': month_code,
+                'year': check_year
+            })
+    
+    # Sort by date to get the most current contracts first
+    all_possible_contracts.sort(key=lambda x: x['date'])
+    
+    # Take the first 4 contracts (most immediate/liquid)
+    for contract in all_possible_contracts[:4]:
+        contracts_to_scrape.append((contract['name'], contract['url']))
+    
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Connection": "keep-alive",
+        "Upgrade-Insecure-Requests": "1",
+    }
+    
+    def scrape_single_contract(contract_name, url):
+        """Scrape a single cotton contract"""
+        try:
+            response = requests.get(url, headers=headers, timeout=30)
+            response.raise_for_status()
+            
+            soup = BeautifulSoup(response.text, "html.parser")
+            page_text = soup.get_text()
+            
+            price_data = None
+            change_data = None
+            change_percent = None
+            
+            # Method 1: Look for "Last Price" pattern in text
+            last_price_match = re.search(r'Last Price[:\s]*([0-9]+\.?[0-9]*)', page_text, re.IGNORECASE)
+            if last_price_match:
+                potential_price = float(last_price_match.group(1))
+                if 40 < potential_price < 200:  # Reasonable cotton price range in cents
+                    price_data = potential_price
+            
+            # Method 2: Look for price patterns in the text content
+            if not price_data:
+                price_patterns = re.findall(r'([0-9]{2,3}\.[0-9]{1,2})[s]?', page_text)
+                for price_str in price_patterns:
+                    potential_price = float(price_str)
+                    if 40 < potential_price < 200:
+                        price_data = potential_price
+                        break
+            
+            # Method 3: Look in specific HTML elements
+            if not price_data:
+                for tag in ['span', 'div', 'td']:
+                    elements = soup.find_all(tag, string=re.compile(r'[0-9]{2,3}\.[0-9]{2}'))
+                    for elem in elements:
+                        text = elem.get_text(strip=True)
+                        price_match = re.search(r'([0-9]{2,3}\.[0-9]{2})', text)
+                        if price_match:
+                            potential_price = float(price_match.group(1))
+                            if 40 < potential_price < 200:
+                                price_data = potential_price
+                                break
+                    if price_data:
+                        break
+            
+            # If we found price data, look for change data
+            if price_data:
+                # Look for change patterns
+                change_patterns = re.findall(r'([+-][0-9]+\.[0-9]+)', page_text)
+                if change_patterns:
+                    try:
+                        change_data = float(change_patterns[0])
+                    except (ValueError, IndexError):
+                        pass
+                
+                # Look for percentage patterns
+                percent_patterns = re.findall(r'([+-]?[0-9]+\.[0-9]+)%', page_text)
+                if percent_patterns:
+                    try:
+                        change_percent = float(percent_patterns[0])
+                    except (ValueError, IndexError):
+                        pass
+            
+            if not price_data:
+                return None
+            
+            # Convert price from US cents to AUD$/bale
+            exchange_rate = get_usd_to_aud()
+            if exchange_rate is None:
+                return None
+            
+            # Cotton futures are in US cents per pound, convert to AUD$/bale
+            price_aud = round(((price_data * exchange_rate) / 100) * 500, 2)
+            
+            # Use percentage change if available, otherwise calculate from raw change
+            if change_percent is not None:
+                final_change = change_percent
+            elif change_data is not None:
+                previous_price = price_data - change_data
+                if previous_price != 0:
+                    final_change = round((change_data / previous_price) * 100, 2)
+                else:
+                    final_change = 0.0
+            else:
+                final_change = 0.0
+            
+            return {
+                "commodity": f"Cotton ({contract_name})",
+                "price": price_aud,
+                "currency": "AUD",
+                "change": final_change,
+                "unit": "$/bale",
+                "source": url,
+                "timestamp": datetime.now(),
+            }
+            
+        except Exception:
+            return None
+    
+    # Scrape all contracts
+    results = []
+    for contract_name, url in contracts_to_scrape:
+        contract_data = scrape_single_contract(contract_name, url)
+        if contract_data:
+            results.append(contract_data)
+    
+    if not results:
+        raise ValueError("Could not extract any cotton futures prices from Barchart")
+    
+    # Return all contracts
+    return results
 
 def scrape_wheat():
     url = "https://www.dpi.nsw.gov.au/agriculture/commodity-report"

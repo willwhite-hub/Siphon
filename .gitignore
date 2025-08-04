@@ -60,7 +60,8 @@ images/
 # === Test files ===
 parse_mla_metadata.py
 test_public_endpoints.py
-mla_indicator.json
-mla_report.json
-mla_saleyard.json
+beef_test_api.py
+mla__indicator.json
+mla__report.json
+mla__saleyard.json
 mla_report_base.json

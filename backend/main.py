@@ -44,9 +44,18 @@ async def lifespan(app: FastAPI):
         # Fetch prices from the API and scrape data
         try:
             fetch_prices(commodity)
-            data = scrape_commodity(commodity)
-            data["timestamp"] = datetime.now(ZoneInfo("Australia/Brisbane")).isoformat()
-            all_prices.append(data)
+            
+            # Special handling for cotton futures to get all contracts
+            if commodity == "cotton_futures":
+                from commodity_scraper import scrape_cotton_futures_all
+                contracts = scrape_cotton_futures_all()
+                for contract in contracts:
+                    contract["timestamp"] = datetime.now(ZoneInfo("Australia/Brisbane")).isoformat()
+                    all_prices.append(contract)
+            else:
+                data = scrape_commodity(commodity)
+                data["timestamp"] = datetime.now(ZoneInfo("Australia/Brisbane")).isoformat()
+                all_prices.append(data)
         # Handle any errors during fetching or scraping
         except Exception as e:
             print(f"Error during startup fetch for {commodity}: {e}")
